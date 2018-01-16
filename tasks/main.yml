@@ -1,0 +1,74 @@
+---
+
+## Install Docker packages
+- name: Add Docker GPG key to APT
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+
+- name: Add Docker repo to APT repositories
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu/ xenial stable
+
+- name: Remove old Docker packages if present
+  apt: 
+    name: "{{ item }}"
+    state: absent
+    autoremove: yes
+  with_items:
+  - docker
+  - docker-engine
+  - docker.io
+
+- name: Install OS packages
+  apt: 
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+    force: yes
+  with_items:
+  - git 
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - software-properties-common
+  - docker-ce 
+  - python-pip
+
+- name: Install PythonPy docker packages
+  pip:
+    name: "{{ item }}"
+  with_items:
+  - docker
+  - docker-compose
+
+- name: Install docker compose
+  get_url:
+    url: https://github.com/docker/compose/releases/download/1.17.1/docker-compose-Linux-x86_64
+    dest: /usr/local/bin/docker-compose
+    mode: 0555
+    checksum: sha256:db0a7b79d195dc021461d5628a8d53eeb2e556d2548b764770fccabb0a319dd8 
+
+- name: Create docker repo
+  file:
+    name: /home/docker/backups
+    state: directory
+    owner: root
+    group: root
+
+## Install Proxy docker
+- name: Install proxy docker
+  template:
+    src: inverseproxy.yaml.j2
+    dest: /home/docker/inverseproxy.yaml
+    owner: root
+    group: root
+    mode: 0644 
+  tags: docker_proxy
+
+- name: start proxy docker
+  docker_service:
+    project_src: /home/docker/
+    files: inverseproxy.yaml
+    project_name: inverseproxy
+  tags: docker_proxy,start_docker
+
