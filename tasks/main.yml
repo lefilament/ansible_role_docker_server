@@ -1,6 +1,11 @@
 ---
 
 ## Install Docker packages
+- name: Install apt-transport-https package
+  apt:
+    name: apt-transport-https
+    state: latest
+
 - name: Add Docker GPG key to APT
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
@@ -25,9 +30,10 @@
     state: latest
     update_cache: yes
     force: yes
+  async: 120
+  poll: 10
   with_items:
   - git 
-  - apt-transport-https
   - ca-certificates
   - curl
   - software-properties-common
