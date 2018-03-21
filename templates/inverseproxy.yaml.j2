@@ -20,6 +20,7 @@ services:
             - --ACME.ACMELogging
             - --ACME.Email=you@example.com
             - --ACME.EntryPoint=https
+            - --ACME.HTTPChallenge.entryPoint=http
             - --ACME.OnHostRule
             - --ACME.Storage=/etc/traefik/acme/acme.json
             - --DefaultEntryPoints=http,https
