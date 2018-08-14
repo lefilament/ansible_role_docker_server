@@ -18,7 +18,7 @@ services:
         tty: true
         command:
             - --ACME.ACMELogging
-            - --ACME.Email=you@example.com
+            - --ACME.Email={{ maintenance_email }}
             - --ACME.EntryPoint=https
             - --ACME.HTTPChallenge.entryPoint=http
             - --ACME.OnHostRule
@@ -58,4 +58,3 @@ networks:
 
 volumes:
     acme:
-

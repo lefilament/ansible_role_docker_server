@@ -5,7 +5,7 @@
 This role allows you to install on a Debian/Ubuntu server the packages needed to run docker services and docker-compose.
 It also deploys and start a dockerized proxy service based on [Traefik](https://github.com/containous/traefik) and a docker protecting the docker socket from [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)
 
-No specific configuration is needed (apart from configuration for Ansible to reach your server and elevate privileges).
+The only specific configuration needed (apart from configuration for Ansible to reach your server and elevate privileges) is to define a variable `maintenance_email` (used in templates/inverseproxy.yaml.j2) which is necessary for Let'sEncrypt certificates alerting about expiry.
 
 
 
