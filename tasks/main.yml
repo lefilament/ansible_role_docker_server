@@ -39,6 +39,22 @@
   - software-properties-common
   - docker-ce 
   - python-pip
+  when: not ansible_check_mode
+
+- name: Check installed OS packages
+  apt: 
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+    force: yes
+  with_items:
+  - git 
+  - ca-certificates
+  - curl
+  - software-properties-common
+  - docker-ce 
+  - python-pip
+  when: ansible_check_mode
 
 - name: Upgrade pip
   easy_install:
