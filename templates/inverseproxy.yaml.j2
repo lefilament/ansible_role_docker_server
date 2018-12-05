@@ -6,6 +6,7 @@ services:
         networks:
             shared:
             private:
+            public:
         volumes:
             - acme:/etc/traefik/acme:rw,Z
         ports:
@@ -49,10 +50,14 @@ services:
 
 networks:
     shared:
+        internal: true
         driver_opts:
             encrypted: 1
-
     private:
+        internal: true
+        driver_opts:
+            encrypted: 1
+    public:
         driver_opts:
             encrypted: 1
 
