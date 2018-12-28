@@ -3,6 +3,7 @@ version: "2.1"
 services:
     proxy:
         image: traefik
+        container_name: inverseproxy
         networks:
             shared:
             private:
@@ -35,6 +36,7 @@ services:
 
     dockersocket:
         image: tecnativa/docker-socket-proxy
+        container_name: inverseproxy_socket
         privileged: true
         networks:
             private:
