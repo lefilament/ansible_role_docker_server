@@ -4,6 +4,7 @@
 - name: Install apt-transport-https package
   apt:
     name: apt-transport-https
+    install_recommends: no
     state: latest
 
 - name: Add Docker GPG key to APT
@@ -30,6 +31,7 @@
     state: latest
     update_cache: yes
     force: yes
+    install_recommends: no
   async: 120
   poll: 10
   with_items:
@@ -47,6 +49,7 @@
     state: latest
     update_cache: yes
     force: yes
+    install_recommends: no
   with_items:
   - git 
   - ca-certificates
@@ -55,11 +58,6 @@
   - docker-ce 
   - python-pip
   when: ansible_check_mode
-
-- name: Upgrade pip
-  easy_install:
-    name: pip
-    state: latest
 
 - name: Install PythonPy docker packages
   pip:
