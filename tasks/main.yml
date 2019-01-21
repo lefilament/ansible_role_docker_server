@@ -6,26 +6,57 @@
     name: apt-transport-https
     install_recommends: no
     state: latest
+  when: ansible_os_family == "Debian"
 
 - name: Add Docker GPG key to APT
   apt_key:
     url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
+  when:  ansible_os_family == "Debian"
 
 - name: Add Docker repo to APT repositories
   apt_repository:
     repo: deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
+  when: ansible_os_family == "Debian"
 
-- name: Remove old Docker packages if present
+- name: Add Docker repo to YUM repositories
+  yum_repository:
+    file: docker-ce
+    name: docker-ce-stable
+    description: Docker CE Stable - $basearch
+    baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    gpgcheck: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Remove old Debian Docker packages if present
   apt: 
     name: "{{ item }}"
     state: absent
     autoremove: yes
   with_items:
+  - containerd
   - docker
   - docker-engine
   - docker.io
+  - runc
+  when: ansible_os_family == "Debian"
 
-- name: Install OS packages
+- name: Remove old RedHat Docker packages if present
+  yum: 
+    name: "{{ item }}"
+    state: absent
+  with_items:
+  - docker
+  - docker-client
+  - docker-client-latest
+  - docker-common
+  - docker-engine
+  - docker-latest
+  - docker-latest-logrotate
+  - docker-logrotate
+  when: ansible_os_family == "RedHat"
+
+- name: Install Debian OS packages
   apt: 
     name: "{{ item }}"
     state: latest
@@ -40,10 +71,21 @@
   - curl
   - software-properties-common
   - docker-ce 
-  - python-pip
-  when: not ansible_check_mode
+  when: not ansible_check_mode and ansible_os_family == "Debian"
 
-- name: Check installed OS packages
+- name : Install RedHat OS packages
+  yum:
+    name: "{{ item }}"
+    update_cache: yes
+  async: 120
+  poll: 10
+  with_items:
+    - device-mapper-persistent-data
+    - lvm2
+    - docker-ce
+  when: not ansible_check_mode and ansible_os_family == "RedHat"
+
+- name: Check installed Debian OS packages
   apt: 
     name: "{{ item }}"
     state: latest
@@ -57,21 +99,24 @@
   - software-properties-common
   - docker-ce 
   - python-pip
-  when: ansible_check_mode
+  when: ansible_check_mode and ansible_os_family == "Debian"
 
-- name: Install PythonPy docker packages
-  pip:
+- name : Check installed RedHat OS packages
+  yum:
     name: "{{ item }}"
+    update_cache: yes
   with_items:
-  - docker
-  - docker-compose
+    - device-mapper-persistent-data
+    - lvm2
+    - docker-ce
+  when: ansible_check_mode and ansible_os_family == "RedHat"
 
 - name: Install docker compose
   get_url:
-    url: https://github.com/docker/compose/releases/download/1.17.1/docker-compose-Linux-x86_64
+    url: https://github.com/docker/compose/releases/download/1.23.2/docker-compose-Linux-x86_64
     dest: /usr/local/bin/docker-compose
     mode: 0555
-    checksum: sha256:db0a7b79d195dc021461d5628a8d53eeb2e556d2548b764770fccabb0a319dd8 
+    checksum: sha256:4d618e19b91b9a49f36d041446d96a1a0a067c676330a4f25aca6bbd000de7a9 
 
 - name: Create docker repo
   file:
