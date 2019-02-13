@@ -30,94 +30,54 @@
 
 - name: Remove old Debian Docker packages if present
   apt: 
-    name: "{{ item }}"
+    name: ['containerd', 'docker', 'docker-engine', 'docker.io', 'runc' ]
     state: absent
     autoremove: yes
-  with_items:
-  - containerd
-  - docker
-  - docker-engine
-  - docker.io
-  - runc
   when: ansible_os_family == "Debian"
 
 - name: Remove old RedHat Docker packages if present
   yum: 
-    name: "{{ item }}"
+    name: ['docker', 'docker-client', 'docker-client-latest', 'docker-common', 'docker-engine', 'docker-latest', 'docker-latest-logrotate', 'docker-logrotate']
     state: absent
-  with_items:
-  - docker
-  - docker-client
-  - docker-client-latest
-  - docker-common
-  - docker-engine
-  - docker-latest
-  - docker-latest-logrotate
-  - docker-logrotate
   when: ansible_os_family == "RedHat"
 
 - name: Install Debian OS packages
   apt: 
-    name: "{{ item }}"
+    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python-pip', 'python-setuptools']
     state: latest
     update_cache: yes
     force: yes
     install_recommends: no
   async: 120
   poll: 10
-  with_items:
-  - git 
-  - ca-certificates
-  - curl
-  - software-properties-common
-  - docker-ce 
-  - python-pip
   when: not ansible_check_mode and ansible_os_family == "Debian"
 
 - name : Install RedHat OS packages
   yum:
-    name: "{{ item }}"
+    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python-pip', 'python-setuptools']
     update_cache: yes
   async: 120
   poll: 10
-  with_items:
-    - device-mapper-persistent-data
-    - lvm2
-    - docker-ce
   when: not ansible_check_mode and ansible_os_family == "RedHat"
 
 - name: Check installed Debian OS packages
   apt: 
-    name: "{{ item }}"
+    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python-pip', 'python-setuptools']
     state: latest
     update_cache: yes
     force: yes
     install_recommends: no
-  with_items:
-  - git 
-  - ca-certificates
-  - curl
-  - software-properties-common
-  - docker-ce 
-  - python-pip
   when: ansible_check_mode and ansible_os_family == "Debian"
 
 - name : Check installed RedHat OS packages
   yum:
-    name: "{{ item }}"
+    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python-pip', 'python-setuptools']
     update_cache: yes
-  with_items:
-    - device-mapper-persistent-data
-    - lvm2
-    - docker-ce
   when: ansible_check_mode and ansible_os_family == "RedHat"
 
 - name: Install docker compose
   pip:
-    name: "{{ item }}"
-  with_items:
-    - setuptools
-    - docker-compose
+    name: ['setuptools', 'docker-compose']
 
 - name: Create docker repo
   file:
