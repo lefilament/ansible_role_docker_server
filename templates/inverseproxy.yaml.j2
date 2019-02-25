@@ -6,6 +6,7 @@ services:
         container_name: inverseproxy
         networks:
             shared:
+            smtp:
             private:
             public:
         volumes:
@@ -52,6 +53,10 @@ services:
 
 networks:
     shared:
+        internal: true
+        driver_opts:
+            encrypted: 1
+    smtp:
         internal: true
         driver_opts:
             encrypted: 1
