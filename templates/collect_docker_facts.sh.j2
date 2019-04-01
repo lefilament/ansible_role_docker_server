@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Copyright © 2019 Le Filament (<http://www.le-filament.com>)
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
+
+mkdir -p /home/{{ host_user }}/versions
+TODAY=`date +%F`
+
+os_file="/home/{{ host_user }}/versions/{{ inventory_hostname|lower }}.$TODAY"
+file="/home/{{ host_user }}/versions/{{ inventory_hostname|lower }}-docker.$TODAY"
+latest_file="/home/{{ host_user }}/versions/{{ inventory_hostname|lower }}-docker.latest"
+printf "DATE = $TODAY"  > $file
+printf "\n\n-- Docker version --\n" >> $file
+/usr/bin/docker version >> $file
+printf "\n\n-- List of containers --\n" >>  $file
+/usr/bin/docker ps -a  >> $file
+printf "\n\n-- List of images --\n" >> $file
+/usr/bin/docker images --digests >> $file
+printf "\n\n-- Disk usage (condensed) --\n" >> $file
+/usr/bin/docker system df >> $file
+printf "\n\n-- Disk usage (full) --\n" >> $file
+/usr/bin/docker system df -v >> $file
+printf "\n\n-- Usage Statistics --\n" >> $file
+/usr/bin/docker stats -a --no-stream >> $file
+cp $file $latest_file
+chmod 644 $file $latest_file
+{% if inventory_hostname in groups.docker_odoo %}
+{% if inventory_hostname in groups.maintenance_nfs %}
+cp $os_file $file /home/docker/backups/odoo/
+{% endif %}
+{% if inventory_hostname in groups.maintenance_sftp %}
+sftp -P 2222 -o IdentityFile=/home/docker/backups/.ssh/id_rsa {{ backup_sftp_user }}@{{ hostvars['Filament_Backup'].ansible_ssh_host }} << COMMANDS
+put $os_file {{ inventory_hostname|lower }}/
+put $file {{ inventory_hostname|lower }}/
+quit
+COMMANDS
+{% endif %}
+{% endif %}

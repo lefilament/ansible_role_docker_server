@@ -103,3 +103,17 @@
     project_name: inverseproxy
   tags: docker_proxy,start_docker
 
+- name: Copy Docker Facts Collection script on server
+  template:
+    src: collect_docker_facts.sh.j2
+    dest: /root/collect_docker_facts.sh
+    owner: root
+    group: root
+    mode: 0700
+
+- name: add cron job to check Docker versions every day
+  cron:
+    name: collect docker facts
+    minute: 1
+    hour: 2
+    job: /root/collect_docker_facts.sh
