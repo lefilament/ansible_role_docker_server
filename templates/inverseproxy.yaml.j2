@@ -1,11 +1,20 @@
 version: "2.1"
-
 services:
     proxy:
         image: traefik
         container_name: inverseproxy
         networks:
             shared:
+{% if inventory_hostname in groups['docker_auth'] or (inventory_hostname in groups['docker_nextcloud'] and cloud_collabora is defined) %}
+              aliases:
+{% if inventory_hostname in groups['docker_auth'] %}
+                - {{ sso_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_nextcloud'] and cloud_collabora is defined %}
+                - {{ cloud_url }}
+                - {{ cloud_collabora_url }}
+{% endif %}
+{% endif %}
             smtp:
             private:
             public:
