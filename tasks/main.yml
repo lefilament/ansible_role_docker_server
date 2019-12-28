@@ -87,20 +87,35 @@
     group: root
 
 ## Install Proxy docker
+- name: Create Inverse Proxy docker structure on server in /home/docker/inverseproxy
+  file:
+    name: /home/docker/inverseproxy
+    state: directory
+    owner: root
+    group: root
+  tags: docker_proxy
+
 - name: Install proxy docker
   template:
     src: inverseproxy.yaml.j2
-    dest: /home/docker/inverseproxy.yaml
+    dest: /home/docker/inverseproxy/docker-compose.yaml
     owner: root
     group: root
     mode: 0644 
   tags: docker_proxy
 
+- name: Copy Traefik configuration file
+  template:
+    src: traefik.toml.j2
+    dest: "/home/docker/inverseproxy/traefik.toml"
+    owner: root
+    group: root
+    mode: 0644
+  tags: docker_proxy
+
 - name: start proxy docker
   docker_service:
-    project_src: /home/docker/
-    files: inverseproxy.yaml
-    project_name: inverseproxy
+    project_src: /home/docker/inverseproxy/
   tags: docker_proxy,start_docker
 
 - name: Copy Docker Facts Collection script on server

@@ -1,7 +1,7 @@
 version: "2.1"
 services:
     proxy:
-        image: traefik:v1.7
+        image: traefik
         container_name: inverseproxy
         networks:
             shared:
@@ -19,30 +19,14 @@ services:
             private:
             public:
         volumes:
-            - acme:/etc/traefik/acme:rw,Z
+            - cert:/etc/traefik/acme:rw,Z
+            - ./traefik.toml:/etc/traefik/traefik.toml:ro
         ports:
             - "80:80"
             - "443:443"
         depends_on:
             - dockersocket
         restart: unless-stopped
-        privileged: true
-        tty: true
-        command:
-            - --ACME.ACMELogging
-            - --ACME.Email={{ maintenance_email }}
-            - --ACME.EntryPoint=https
-            - --ACME.HTTPChallenge.entryPoint=http
-            - --ACME.OnHostRule
-            - --ACME.Storage=/etc/traefik/acme/acme.json
-            - --DefaultEntryPoints=http,https
-            - --EntryPoints=Name:http Address::80 Redirect.EntryPoint:https
-            - --EntryPoints=Name:https Address::443 TLS
-            - --LogLevel=INFO
-            - --Docker
-            - --Docker.EndPoint=http://dockersocket:2375
-            - --Docker.ExposedByDefault=false
-            - --Docker.Watch
 
     dockersocket:
         image: tecnativa/docker-socket-proxy

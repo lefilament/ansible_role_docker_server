@@ -1,0 +1,59 @@
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+  [entryPoints.https]
+    address = ":443"
+
+[providers]
+  [providers.docker]
+    endpoint = "http://dockersocket:2375"
+    exposedByDefault = false
+  [providers.file]
+    directory = "/etc/traefik"
+
+[log]
+  level = "INFO"
+
+[certificatesResolvers]
+  [certificatesResolvers.le]
+    [certificatesResolvers.le.acme]
+      email = "maintenance@le-filament.com"
+      storage = "/etc/traefik/acme/acme.json"
+      [certificatesResolvers.le.acme.httpChallenge]
+        entryPoint = "http"
+
+[http]
+  [http.middlewares]
+    [http.middlewares.https-redirect.redirectscheme]
+      scheme = "https"
+    [http.middlewares.security-headers.headers]
+      ForceSTSHeader = true
+      SSLRedirect = true
+      STSIncludeSubdomains = true
+      STSPreload = true
+      STSSeconds = 15552000
+    [http.middlewares.auth.basicAuth]
+      users = ["{{ host_user }}:{{ srv_proxy_pass | password_hash('apr_md5_crypt', 65534 | random(seed=inventory_hostname) | string) }}"]
+    [http.middlewares.smtp-stripprefix.stripprefix]
+      prefixes = ["/smtp"]
+    [http.middlewares.norobot-headers.headers]
+      [http.middlewares.norobot-headers.headers.customResponseHeaders]
+        X-Robots-Tag = "noindex, nofollow"
+
+[tls]
+  [tls.options]
+    [tls.options.default]
+      minVersion = "VersionTLS12"
+      sniStrict = true
+      cipherSuites = [
+        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+        "TLS_AES_128_GCM_SHA256",
+        "TLS_AES_256_GCM_SHA384",
+        "TLS_CHACHA20_POLY1305_SHA256",
+        "TLS_FALLBACK_SCSV" # Client is doing version fallback. See RFC 7507.
+    ]
