@@ -1,13 +1,25 @@
 [entryPoints]
-  [entryPoints.http]
+  [entryPoints.web]
     address = ":80"
-  [entryPoints.https]
+    [entryPoints.web.http]
+      middlewares = ["https-redirect@file"]
+      [entryPoints.web.http.redirections]
+        [entryPoints.web.http.redirections.entryPoint]
+          to = "websecure"
+
+  [entryPoints.websecure]
     address = ":443"
+    [entryPoints.websecure.http]
+      middlewares = ["security-headers@file"]
+      [entryPoints.websecure.http.tls]
+        options = "default@file"
+        certResolver = "le"
 
 [providers]
   [providers.docker]
     endpoint = "http://dockersocket:2375"
     exposedByDefault = false
+    network = "inverseproxy_shared"
   [providers.file]
     directory = "/etc/traefik"
 
@@ -20,18 +32,25 @@
       email = "maintenance@le-filament.com"
       storage = "/etc/traefik/acme/acme.json"
       [certificatesResolvers.le.acme.httpChallenge]
-        entryPoint = "http"
+        entryPoint = "web"
 
 [http]
   [http.middlewares]
     [http.middlewares.https-redirect.redirectscheme]
       scheme = "https"
     [http.middlewares.security-headers.headers]
+      BrowserXssFilter = true
+      ContentTypeNosniff = true
+      ReferrerPolicy = "same-origin"
       ForceSTSHeader = true
+      FrameDeny = true
+      CustomFrameOptionsValue = "SAMEORIGIN"
       SSLRedirect = true
       STSIncludeSubdomains = true
       STSPreload = true
       STSSeconds = 15552000
+      [http.middlewares.security-headers.headers.customResponseHeaders]
+        server = "" # Removes
     [http.middlewares.auth.basicAuth]
       users = ["{{ host_user }}:{{ srv_proxy_pass | password_hash('apr_md5_crypt', 65534 | random(seed=inventory_hostname) | string) }}"]
     [http.middlewares.smtp-stripprefix.stripprefix]

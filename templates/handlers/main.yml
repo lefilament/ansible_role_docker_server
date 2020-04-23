@@ -1,0 +1,11 @@
+---
+
+- name: start inverseproxy docker
+  docker_service:
+    project_src: /home/docker/inverseproxy
+    recreate: always
+    restarted: yes
+    remove_orphans: yes
+  async: 120
+  poll: 10
+  when: not ansible_check_mode

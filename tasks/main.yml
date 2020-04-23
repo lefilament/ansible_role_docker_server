@@ -103,6 +103,8 @@
     group: root
     mode: 0644 
   tags: docker_proxy
+  notify: 
+    - start inverseproxy docker
 
 - name: Copy Traefik configuration file
   template:
@@ -112,11 +114,8 @@
     group: root
     mode: 0644
   tags: docker_proxy
-
-- name: start proxy docker
-  docker_service:
-    project_src: /home/docker/inverseproxy/
-  tags: docker_proxy,start_docker
+  notify: 
+    - start inverseproxy docker
 
 - name: Copy Docker Facts Collection script on server
   template:
