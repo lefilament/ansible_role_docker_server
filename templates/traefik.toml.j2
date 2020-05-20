@@ -26,6 +26,14 @@
 [log]
   level = "INFO"
 
+[accesslog]
+  [accessLog.fields]
+    defaultMode = "keep"
+    [accessLog.fields.headers]
+      defaultMode = "keep"
+    [accessLog.filters]
+      statusCodes = "400-499"
+
 [certificatesResolvers]
   [certificatesResolvers.le]
     [certificatesResolvers.le.acme]

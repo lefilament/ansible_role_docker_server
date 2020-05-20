@@ -79,6 +79,15 @@
   pip:
     name: ['setuptools', 'wheel', 'docker-compose']
 
+- name: securize docker daemon
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart docker daemon
+
 - name: Create docker repo
   file:
     name: /home/docker/backups

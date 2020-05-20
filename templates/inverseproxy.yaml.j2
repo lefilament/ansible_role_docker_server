@@ -1,19 +1,51 @@
 version: "2.1"
 services:
     proxy:
-        image: traefik
+        image: traefik:v2.2
         container_name: inverseproxy
         networks:
             shared:
-{% if inventory_hostname in groups['docker_auth'] or (inventory_hostname in groups['docker_nextcloud'] and cloud_collabora is defined) %}
               aliases:
 {% if inventory_hostname in groups['docker_auth'] %}
+                - {{ ldap_url }}
                 - {{ sso_url }}
 {% endif %}
-{% if inventory_hostname in groups['docker_nextcloud'] and cloud_collabora is defined %}
+{% if inventory_hostname in groups['docker_drawio'] %}
+                - {{ drawio_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_etherpad'] %}
+                - {{ pad_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_framadate'] %}
+                - {{ date_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_gitlab'] %}
+                - {{ git_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_mattermost'] %}
+                - {{ mm_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_nagios'] %}
+                - {{ nagios_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_nextcloud'] %}
                 - {{ cloud_url }}
+{% endif %}
+{% if cloud_collabora is defined %}
                 - {{ cloud_collabora_url }}
 {% endif %}
+{% if cloud_onlyoffice is defined %}
+                - {{ cloud_onlyoffice_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_odoo'] %}
+                - {{ odoo_url }}
+                - {{ odoo_test_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_privatebin'] %}
+                - {{ privatebin_url }}
+{% endif %}
+{% if inventory_hostname in groups['docker_tuleap'] %}
+                - {{ tuleap_url }}
 {% endif %}
             smtp:
             private:
@@ -32,6 +64,7 @@ services:
         image: tecnativa/docker-socket-proxy
         container_name: inverseproxy_socket
         privileged: true
+        userns_mode: "host"
         networks:
             private:
         volumes:

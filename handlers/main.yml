@@ -1,5 +1,8 @@
 ---
 
+- name: restart docker daemon
+  service: name=docker state=restarted
+
 - name: start inverseproxy docker
   docker_service:
     project_src: /home/docker/inverseproxy
