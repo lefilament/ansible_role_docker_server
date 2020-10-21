@@ -4,7 +4,7 @@
   service: name=docker state=restarted
 
 - name: start inverseproxy docker
-  docker_service:
+  docker_compose:
     project_src: /home/docker/inverseproxy
     recreate: always
     restarted: yes

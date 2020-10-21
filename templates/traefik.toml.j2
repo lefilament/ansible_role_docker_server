@@ -10,7 +10,7 @@
   [entryPoints.websecure]
     address = ":443"
     [entryPoints.websecure.http]
-      middlewares = ["security-headers@file"]
+      middlewares = ["security-headers@file"{% if inventory_hostname not in groups.docker_tuleap %}, "limit@file"{% endif %}, "compression@file"]
       [entryPoints.websecure.http.tls]
         options = "default@file"
         certResolver = "le"
@@ -27,10 +27,13 @@
   level = "INFO"
 
 [accesslog]
+  filePath = "/var/log/traefik/access.log"
   [accessLog.fields]
     defaultMode = "keep"
     [accessLog.fields.headers]
       defaultMode = "keep"
+    [accessLog.fields.names]
+      StartUTC = "drop"
     [accessLog.filters]
       statusCodes = "400-499"
 
@@ -51,14 +54,19 @@
       ContentTypeNosniff = true
       ReferrerPolicy = "same-origin"
       ForceSTSHeader = true
+{% if cloud_onlyoffice is not defined %}
       FrameDeny = true
       CustomFrameOptionsValue = "SAMEORIGIN"
+{% endif %}
       SSLRedirect = true
       STSIncludeSubdomains = true
       STSPreload = true
       STSSeconds = 15552000
       [http.middlewares.security-headers.headers.customResponseHeaders]
         server = "" # Removes
+    [http.middlewares.compression.compress]
+    [http.middlewares.limit.buffering]
+      retryExpression = "IsNetworkError() && Attempts() < 5"
     [http.middlewares.auth.basicAuth]
       users = ["{{ host_user }}:{{ srv_proxy_pass | password_hash('apr_md5_crypt', 65534 | random(seed=inventory_hostname) | string) }}"]
     [http.middlewares.smtp-stripprefix.stripprefix]

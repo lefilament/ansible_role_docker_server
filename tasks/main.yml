@@ -8,6 +8,7 @@
     state: latest
   when: ansible_os_family == "Debian"
 
+# TODO-PI update for getting proper packages for Raspbian - add packages libffi-dev libssl-dev
 - name: Add Docker GPG key to APT
   apt_key:
     url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
@@ -43,7 +44,7 @@
 
 - name: Install Debian OS packages
   apt: 
-    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python-pip', 'python-setuptools', 'python-dev', 'build-essential']
+    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-dev', 'python3-docker', 'build-essential']
     state: latest
     update_cache: yes
     force: yes
@@ -54,7 +55,7 @@
 
 - name : Install RedHat OS packages
   yum:
-    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python-pip', 'python-setuptools', 'python-devel', 'gcc']
+    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-devel', 'python3-docker', 'gcc']
     update_cache: yes
   async: 120
   poll: 10
@@ -62,7 +63,7 @@
 
 - name: Check installed Debian OS packages
   apt: 
-    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python-pip', 'python-setuptools', 'python-dev', 'build-essential']
+    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-dev', 'python3-docker', 'build-essential']
     state: latest
     update_cache: yes
     force: yes
@@ -71,7 +72,7 @@
 
 - name : Check installed RedHat OS packages
   yum:
-    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python-pip', 'python-setuptools', 'python-devel', 'gcc']
+    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-devel', 'python3-docker', 'gcc']
     update_cache: yes
   when: ansible_check_mode and ansible_os_family == "RedHat"
 
@@ -85,7 +86,7 @@
     dest: /etc/docker/daemon.json
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify: restart docker daemon
 
 - name: Create docker repo
@@ -110,7 +111,7 @@
     dest: /home/docker/inverseproxy/docker-compose.yaml
     owner: root
     group: root
-    mode: 0644 
+    mode: '0644'
   tags: docker_proxy
   notify: 
     - start inverseproxy docker
@@ -121,7 +122,7 @@
     dest: "/home/docker/inverseproxy/traefik.toml"
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   tags: docker_proxy
   notify: 
     - start inverseproxy docker
@@ -132,11 +133,41 @@
     dest: /root/collect_docker_facts.sh
     owner: root
     group: root
-    mode: 0700
+    mode: '0700'
 
 - name: add cron job to check Docker versions every day
   cron:
     name: collect docker facts
-    minute: 1
-    hour: 2
+    minute: "1"
+    hour: "2"
     job: /root/collect_docker_facts.sh
+
+- name: Retrieve subuid for dockremap
+  command: grep dockremap /etc/subuid
+  register: dockremap_subuid
+  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
+
+- name: Retrieve subgid for dockremap
+  command: grep dockremap /etc/subgid
+  register: dockremap_subgid
+  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
+
+- name: Save uid to hostvars for dockremap user
+  local_action:
+    module: lineinfile
+    name: "host_vars/{{ inventory_hostname }}"
+    regexp: "dockremap_subuid:"
+    line: "dockremap_subuid: {{ dockremap_subuid.stdout.split(':')[1] }}"
+  connection: local
+  become: no
+  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
+
+- name: Save gid to hostvars for dockremap user
+  local_action:
+    module: lineinfile
+    name: "host_vars/{{ inventory_hostname }}"
+    regexp: "dockremap_subgid:"
+    line: "dockremap_subgid: {{ dockremap_subgid.stdout.split(':')[1] }}"
+  connection: local
+  become: no
+  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode

@@ -3,6 +3,8 @@ services:
     proxy:
         image: traefik:v2.2
         container_name: inverseproxy
+        environment:
+            TZ: "Europe/Paris" 
         networks:
             shared:
               aliases:
@@ -28,18 +30,22 @@ services:
 {% if inventory_hostname in groups['docker_nagios'] %}
                 - {{ nagios_url }}
 {% endif %}
-{% if inventory_hostname in groups['docker_nextcloud'] %}
+{% if inventory_hostname in groups['docker_nextcloud'] | union(groups['docker_owncloud']) %}
                 - {{ cloud_url }}
-{% endif %}
 {% if cloud_collabora is defined %}
                 - {{ cloud_collabora_url }}
 {% endif %}
 {% if cloud_onlyoffice is defined %}
                 - {{ cloud_onlyoffice_url }}
 {% endif %}
+{% endif %}
 {% if inventory_hostname in groups['docker_odoo'] %}
-                - {{ odoo_url }}
-                - {{ odoo_test_url }}
+{% if odoo_prod is defined %}
+                - {{ odoo_prod.url }}
+{% endif %}
+{% for instance in odoo_nonprod_instances %}
+                - {{ (lookup('vars', instance)).url }}
+{% endfor %}
 {% endif %}
 {% if inventory_hostname in groups['docker_privatebin'] %}
                 - {{ privatebin_url }}
@@ -52,6 +58,7 @@ services:
             public:
         volumes:
             - cert:/etc/traefik/acme:rw,Z
+            - logs:/var/log/traefik/:rw
             - ./traefik.toml:/etc/traefik/traefik.toml:ro
         ports:
             - "80:80"
@@ -96,3 +103,4 @@ networks:
 
 volumes:
     cert:
+    logs:

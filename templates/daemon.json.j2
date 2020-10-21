@@ -7,7 +7,11 @@
             "max-size": "10m",    
             "max-file": "3"    
             },
+{% if inventory_hostname not in groups.docker_nagios %}
         "no-new-privileges": true,
+{% endif %}
+{% if docker_no_namespace is not defined or not docker_no_namespace %}
         "userns-remap": "default",
+{% endif %}
         "userland-proxy": false
 }
