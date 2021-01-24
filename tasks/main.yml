@@ -14,10 +14,15 @@
     url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
   when:  ansible_os_family == "Debian"
 
-- name: Add Docker repo to APT repositories
+- name: Add Docker repo to APT repositories for x86_64 architecture
   apt_repository:
     repo: deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
-  when: ansible_os_family == "Debian"
+  when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
+
+- name: Add Docker repo to APT repositories for ARM 64 architecture
+  apt_repository:
+    repo: deb [arch=arm64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
+  when: ansible_os_family == "Debian" and ansible_architecture == "aarch64"
 
 - name: Add Docker repo to YUM repositories
   yum_repository:
@@ -30,20 +35,20 @@
   when: ansible_os_family == "RedHat"
 
 - name: Remove old Debian Docker packages if present
-  apt: 
+  apt:
     name: ['containerd', 'docker', 'docker-engine', 'docker.io', 'runc' ]
     state: absent
     autoremove: yes
   when: ansible_os_family == "Debian"
 
 - name: Remove old RedHat Docker packages if present
-  yum: 
+  yum:
     name: ['docker', 'docker-client', 'docker-client-latest', 'docker-common', 'docker-engine', 'docker-latest', 'docker-latest-logrotate', 'docker-logrotate']
     state: absent
   when: ansible_os_family == "RedHat"
 
 - name: Install Debian OS packages
-  apt: 
+  apt:
     name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-dev', 'python3-docker', 'build-essential']
     state: latest
     update_cache: yes
@@ -62,7 +67,7 @@
   when: not ansible_check_mode and ansible_os_family == "RedHat"
 
 - name: Check installed Debian OS packages
-  apt: 
+  apt:
     name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-dev', 'python3-docker', 'build-essential']
     state: latest
     update_cache: yes
@@ -78,7 +83,9 @@
 
 - name: Install docker compose
   pip:
-    name: ['setuptools', 'wheel', 'docker-compose']
+    name: ['docker-compose']
+    executable: /usr/bin/pip3
+    state: latest
 
 - name: securize docker daemon
   template:
@@ -113,7 +120,7 @@
     group: root
     mode: '0644'
   tags: docker_proxy
-  notify: 
+  notify:
     - start inverseproxy docker
 
 - name: Copy Traefik configuration file
@@ -124,7 +131,7 @@
     group: root
     mode: '0644'
   tags: docker_proxy
-  notify: 
+  notify:
     - start inverseproxy docker
 
 - name: Copy Docker Facts Collection script on server
@@ -141,33 +148,3 @@
     minute: "1"
     hour: "2"
     job: /root/collect_docker_facts.sh
-
-- name: Retrieve subuid for dockremap
-  command: grep dockremap /etc/subuid
-  register: dockremap_subuid
-  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
-
-- name: Retrieve subgid for dockremap
-  command: grep dockremap /etc/subgid
-  register: dockremap_subgid
-  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
-
-- name: Save uid to hostvars for dockremap user
-  local_action:
-    module: lineinfile
-    name: "host_vars/{{ inventory_hostname }}"
-    regexp: "dockremap_subuid:"
-    line: "dockremap_subuid: {{ dockremap_subuid.stdout.split(':')[1] }}"
-  connection: local
-  become: no
-  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
-
-- name: Save gid to hostvars for dockremap user
-  local_action:
-    module: lineinfile
-    name: "host_vars/{{ inventory_hostname }}"
-    regexp: "dockremap_subgid:"
-    line: "dockremap_subgid: {{ dockremap_subgid.stdout.split(':')[1] }}"
-  connection: local
-  become: no
-  when: docker_no_namespace is not defined or not docker_no_namespace and not ansible_check_mode
