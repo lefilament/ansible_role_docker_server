@@ -40,7 +40,7 @@
 [certificatesResolvers]
   [certificatesResolvers.le]
     [certificatesResolvers.le.acme]
-      email = "maintenance@le-filament.com"
+      email = "{{ maintenance_email }}"
       storage = "/etc/traefik/acme/acme.json"
       [certificatesResolvers.le.acme.httpChallenge]
         entryPoint = "web"
