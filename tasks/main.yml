@@ -83,7 +83,7 @@
 
 - name: Install docker compose
   pip:
-    name: ['docker-compose']
+    name: ['pip', 'docker-compose']
     executable: /usr/bin/pip3
     state: latest
 
