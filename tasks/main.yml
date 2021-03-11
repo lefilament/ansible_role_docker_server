@@ -81,9 +81,15 @@
     update_cache: yes
   when: ansible_check_mode and ansible_os_family == "RedHat"
 
+- name: Update pip
+  pip:
+    name: ['pip']
+    executable: /usr/bin/pip3
+    state: latest
+
 - name: Install docker compose
   pip:
-    name: ['pip', 'docker-compose']
+    name: ['docker-compose']
     executable: /usr/bin/pip3
     state: latest
 
