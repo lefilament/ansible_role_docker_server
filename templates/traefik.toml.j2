@@ -2,17 +2,17 @@
   [entryPoints.web]
     address = ":80"
     [entryPoints.web.http]
-      middlewares = ["https-redirect@file"]
       [entryPoints.web.http.redirections]
         [entryPoints.web.http.redirections.entryPoint]
           to = "websecure"
+          scheme = "https"
 
   [entryPoints.websecure]
     address = ":443"
     [entryPoints.websecure.http]
       middlewares = ["security-headers@file"{% if inventory_hostname not in groups.docker_tuleap %}, "limit@file"{% endif %}, "compression@file"]
       [entryPoints.websecure.http.tls]
-        options = "default@file"
+        options = "default"
         certResolver = "le"
 
 [providers]
@@ -42,26 +42,23 @@
     [certificatesResolvers.le.acme]
       email = "{{ maintenance_email }}"
       storage = "/etc/traefik/acme/acme.json"
-      [certificatesResolvers.le.acme.httpChallenge]
-        entryPoint = "web"
+      [certificatesResolvers.le.acme.tlsChallenge]
 
 [http]
   [http.middlewares]
-    [http.middlewares.https-redirect.redirectscheme]
-      scheme = "https"
     [http.middlewares.security-headers.headers]
-      BrowserXssFilter = true
-      ContentTypeNosniff = true
-      ReferrerPolicy = "same-origin"
-      ForceSTSHeader = true
+      browserXssFilter = true
+      contentTypeNosniff = true
+      referrerPolicy = "same-origin"
+      forceSTSHeader = true
 {% if cloud_onlyoffice is not defined %}
-      FrameDeny = true
-      CustomFrameOptionsValue = "SAMEORIGIN"
+      frameDeny = true
+      customFrameOptionsValue = "SAMEORIGIN"
 {% endif %}
-      SSLRedirect = true
-      STSIncludeSubdomains = true
-      STSPreload = true
-      STSSeconds = 15552000
+      sslRedirect = true
+      stsIncludeSubdomains = true
+      stsPreload = true
+      stsSeconds = 15552000
       [http.middlewares.security-headers.headers.customResponseHeaders]
         server = "" # Removes
     [http.middlewares.compression.compress]
