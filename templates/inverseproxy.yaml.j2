@@ -53,6 +53,9 @@ services:
 {% if inventory_hostname in groups['docker_tuleap'] %}
                 - {{ tuleap_url }}
 {% endif %}
+{% if metabase is defined and metabase %}
+            bi:
+{% endif %}
             smtp:
             private:
             public:
@@ -89,6 +92,12 @@ networks:
         internal: true
         driver_opts:
             encrypted: 1
+{% if metabase is defined and metabase %}
+    bi:
+        internal: true
+        driver_opts:
+            encrypted: 1
+{% endif %}
     smtp:
         internal: true
         driver_opts:
