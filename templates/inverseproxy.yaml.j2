@@ -1,64 +1,39 @@
 version: "2.1"
 services:
     proxy:
-        image: traefik:v2.4
+        image: traefik:{{ traefik_version }}
         container_name: inverseproxy
         environment:
-            TZ: "Europe/Paris"
+            TZ: "{{ timezone }}"
         networks:
             shared:
+{% if inventory_hostname in groups['docker_auth'] | union(groups['docker_nagios']) or cloud_collabora or cloud_onlyoffice %}
               aliases:
 {% if inventory_hostname in groups['docker_auth'] %}
                 - {{ ldap_url }}
                 - {{ sso_url }}
-{% endif %}
-{% if inventory_hostname in groups['docker_drawio'] %}
-                - {{ drawio_url }}
-{% endif %}
-{% if inventory_hostname in groups['docker_etherpad'] %}
-                - {{ pad_url }}
-{% endif %}
-{% if inventory_hostname in groups['docker_framadate'] %}
-                - {{ date_url }}
-{% endif %}
-{% if inventory_hostname in groups['docker_gitlab'] %}
-                - {{ git_url }}
-{% endif %}
-{% if inventory_hostname in groups['docker_mattermost'] %}
-                - {{ mm_url }}
 {% endif %}
 {% if inventory_hostname in groups['docker_nagios'] %}
                 - {{ nagios_url }}
 {% endif %}
 {% if inventory_hostname in groups['docker_nextcloud'] | union(groups['docker_owncloud']) %}
                 - {{ cloud_url }}
-{% if cloud_collabora is defined %}
+{% if cloud_collabora %}
                 - {{ cloud_collabora_url }}
 {% endif %}
-{% if cloud_onlyoffice is defined %}
+{% if cloud_onlyoffice %}
                 - {{ cloud_onlyoffice_url }}
 {% endif %}
 {% endif %}
-{% if inventory_hostname in groups['docker_odoo'] %}
-{% if odoo_prod is defined %}
-                - {{ odoo_prod.url }}
 {% endif %}
-{% for instance in odoo_nonprod_instances | default([]) %}
-                - {{ instance.url }}
-{% endfor %}
-{% endif %}
-{% if inventory_hostname in groups['docker_privatebin'] %}
-                - {{ privatebin_url }}
-{% endif %}
-{% if inventory_hostname in groups['docker_tuleap'] %}
-                - {{ tuleap_url }}
-{% endif %}
-{% if metabase is defined and metabase %}
+{% if metabase %}
             bi:
 {% endif %}
             smtp:
             private:
+{% if restrict_internet_access %}
             public:
+{% endif %}
         volumes:
             - cert:/etc/traefik/acme:rw,Z
             - logs:/var/log/traefik/:rw
@@ -89,10 +64,12 @@ services:
 
 networks:
     shared:
+{% if restrict_internet_access %}
         internal: true
+{% endif %}
         driver_opts:
             encrypted: 1
-{% if metabase is defined and metabase %}
+{% if metabase %}
     bi:
         internal: true
         driver_opts:
@@ -106,9 +83,11 @@ networks:
         internal: true
         driver_opts:
             encrypted: 1
+{% if restrict_internet_access %}
     public:
         driver_opts:
             encrypted: 1
+{% endif %}
 
 volumes:
     cert:

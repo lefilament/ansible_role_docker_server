@@ -1,10 +1,12 @@
 ---
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
 
 ## Install Docker packages
 - name: Install apt-transport-https package
   apt:
     name: apt-transport-https
-    install_recommends: no
+    install_recommends: false
     state: latest
   when: ansible_os_family == "Debian"
 
@@ -12,16 +14,18 @@
 - name: Add Docker GPG key to APT
   apt_key:
     url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
-  when:  ansible_os_family == "Debian"
+  when: ansible_os_family == "Debian"
 
 - name: Add Docker repo to APT repositories for x86_64 architecture
   apt_repository:
     repo: deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
+    update_cache: true
   when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
 
 - name: Add Docker repo to APT repositories for ARM 64 architecture
   apt_repository:
     repo: deb [arch=arm64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
+    update_cache: true
   when: ansible_os_family == "Debian" and ansible_architecture == "aarch64"
 
 - name: Add Docker repo to YUM repositories
@@ -30,68 +34,35 @@
     name: docker-ce-stable
     description: Docker CE Stable - $basearch
     baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
-    gpgkey: https://download.docker.com/linux/centos/gpg
-    gpgcheck: yes
+    gpgkey: https://download.docker.com/linux/centos/gpue
+    gpgcheck: true
   when: ansible_os_family == "RedHat"
 
-- name: Remove old Debian Docker packages if present
-  apt:
-    name: ['containerd', 'docker', 'docker-engine', 'docker.io', 'runc' ]
+- name: Remove old Docker packages if present
+  package:
+    name: "{{ packages_to_remove }}"
     state: absent
-    autoremove: yes
-  when: ansible_os_family == "Debian"
 
-- name: Remove old RedHat Docker packages if present
-  yum:
-    name: ['docker', 'docker-client', 'docker-client-latest', 'docker-common', 'docker-engine', 'docker-latest', 'docker-latest-logrotate', 'docker-logrotate']
-    state: absent
-  when: ansible_os_family == "RedHat"
-
-- name: Install Debian OS packages
-  apt:
-    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-dev', 'python3-docker', 'build-essential']
+- name: Install OS packages
+  package:
+    name: "{{ packages_to_install }}"
     state: latest
-    update_cache: yes
-    force: yes
-    install_recommends: no
   async: 120
   poll: 10
-  when: not ansible_check_mode and ansible_os_family == "Debian"
+  when: not ansible_check_mode
 
-- name : Install RedHat OS packages
-  yum:
-    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-devel', 'python3-docker', 'gcc']
-    update_cache: yes
-  async: 120
-  poll: 10
-  when: not ansible_check_mode and ansible_os_family == "RedHat"
-
-- name: Check installed Debian OS packages
-  apt:
-    name: ['git', 'ca-certificates', 'curl', 'software-properties-common', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-dev', 'python3-docker', 'build-essential']
+- name: Check installed OS packages
+  package:
+    name: "{{ packages_to_install }}"
     state: latest
-    update_cache: yes
-    force: yes
-    install_recommends: no
-  when: ansible_check_mode and ansible_os_family == "Debian"
-
-- name : Check installed RedHat OS packages
-  yum:
-    name: ['device-mapper-persistent-data', 'lvm2', 'docker-ce', 'python3-pip', 'python3-setuptools', 'python3-devel', 'python3-docker', 'gcc']
-    update_cache: yes
-  when: ansible_check_mode and ansible_os_family == "RedHat"
+  when: ansible_check_mode
 
 - name: Update pip
   pip:
-    name: ['pip']
+    name: ['{{ item }}']
     executable: /usr/bin/pip3
     state: latest
-
-- name: Install docker compose
-  pip:
-    name: ['docker-compose']
-    executable: /usr/bin/pip3
-    state: latest
+  with_items: "{{ pip_packages }}"
 
 - name: securize docker daemon
   template:
@@ -108,6 +79,7 @@
     state: directory
     owner: root
     group: root
+    mode: '0755'
 
 ## Install Proxy docker
 - name: Create Inverse Proxy docker structure on server in /home/docker/inverseproxy
@@ -116,6 +88,7 @@
     state: directory
     owner: root
     group: root
+    mode: '0755'
   tags: docker_proxy
 
 - name: Install proxy docker
@@ -154,3 +127,41 @@
     minute: "1"
     hour: "2"
     job: /root/collect_docker_facts.sh
+
+# Flush handlers in order to be able to restart docker daemon with new config and retrieve vars
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Retrieve subuid for dockremap
+  command: grep dockremap /etc/subuid
+  register: dockremap_subuid_output
+  when: docker_userns_remap
+
+- name: Retrieve subgid for dockremap
+  command: grep dockremap /etc/subgid
+  register: dockremap_subgid_output
+  when: docker_userns_remap
+
+- name: Save uid to hostvars for dockremap user
+  lineinfile:
+    name: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}"
+    regexp: "dockremap_subuid:"
+    line: "dockremap_subuid: {{ dockremap_subuid_output.stdout.split(':')[1] }}"
+    create: true
+    mode: '0664'
+  connection: local
+  become: false
+  delegate_to: localhost
+  when: docker_userns_remap and dockremap_subuid_output.stdout is defined
+
+- name: Save gid to hostvars for dockremap user
+  lineinfile:
+    name: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}"
+    regexp: "dockremap_subgid:"
+    line: "dockremap_subgid: {{ dockremap_subgid_output.stdout.split(':')[1] }}"
+    create: true
+    mode: '0664'
+  connection: local
+  become: false
+  delegate_to: localhost
+  when: docker_userns_remap and dockremap_subgid_output.stdout is defined

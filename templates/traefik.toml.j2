@@ -40,7 +40,7 @@
 [certificatesResolvers]
   [certificatesResolvers.le]
     [certificatesResolvers.le.acme]
-      email = "{{ maintenance_email }}"
+      email = "{{ default_maintenance_email }}"
       storage = "/etc/traefik/acme/acme.json"
       [certificatesResolvers.le.acme.tlsChallenge]
 
@@ -51,7 +51,7 @@
       contentTypeNosniff = true
       referrerPolicy = "same-origin"
       forceSTSHeader = true
-{% if cloud_onlyoffice is not defined %}
+{% if not cloud_onlyoffice %}
       frameDeny = true
       customFrameOptionsValue = "SAMEORIGIN"
 {% endif %}

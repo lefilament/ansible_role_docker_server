@@ -7,8 +7,8 @@
   docker_compose:
     project_src: /home/docker/inverseproxy
     recreate: always
-    restarted: yes
-    remove_orphans: yes
+    restarted: true
+    remove_orphans: true
   async: 120
   poll: 10
   when: not ansible_check_mode

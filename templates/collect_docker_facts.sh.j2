@@ -23,7 +23,11 @@ printf "\n\n-- Usage Statistics --\n" >> $file
 /usr/bin/docker stats -a --no-stream >> $file
 cp $file $latest_file
 chmod 644 $file $latest_file
-sftp -P {{ default_sshd_port }} -o IdentityFile=/home/{{ host_user }}/.ssh/id_ed25519 {{ backup_sftp_user }}@{{ hostvars['Server_Backup'].ansible_host }} << COMMANDS
+{% for host in groups.backup_server %}
+{% if host != inventory_hostname %}
+sftp -P {{ default_sshd_port }} -o IdentityFile=/home/{{ host_user }}/.ssh/id_ed25519 {{ backup_sftp_user }}@{{ hostvars[host].ansible_host }} << COMMANDS
 put $file {{ inventory_hostname|lower }}/
 quit
 COMMANDS
+{% endif %}
+{% endfor %}

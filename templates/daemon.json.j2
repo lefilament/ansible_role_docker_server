@@ -4,13 +4,13 @@
         "live-restore": true,
         "log-driver": "json-file",
         "log-opts": {
-            "max-size": "10m",    
-            "max-file": "3"    
+            "max-size": "10m",
+            "max-file": "3"
             },
 {% if inventory_hostname not in groups.docker_nagios %}
         "no-new-privileges": true,
 {% endif %}
-{% if docker_no_namespace is not defined or not docker_no_namespace %}
+{% if docker_userns_remap %}
         "userns-remap": "default",
 {% endif %}
         "userland-proxy": false

@@ -1,0 +1,22 @@
+---
+default_maintenance_email: "maintenance@example.org"
+default_sshd_port: 10022
+docker_userns_remap: true
+restrict_internet_access: true
+host_user: "testuser"
+srv_proxy_pass: "SuperSecureProxyP4$$"
+
+## Dependecies upon other docker roles
+## NextCloud or Owncloud
+cloud_collabora: false
+cloud_collabora_url: "collabora.example.org"
+cloud_onlyoffice: false
+cloud_onlyoffice_url: "onlyoffice.example.org"
+cloud_url: "cloud.example.org"
+
+## Odoo
+metabase: false
+
+## Auth
+ldap_url: "ldap.example.org"
+sso_url: "sso.example.org"

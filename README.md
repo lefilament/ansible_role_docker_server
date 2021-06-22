@@ -1,23 +1,96 @@
-# Ansible role to deploy docker packages on Debian/Ubuntu server and proxy docker
+docker_server
+=========
+The main repo for this role is on [Le Filament GitLab](https://sources.le-filament.com/lefilament/ansible-roles/docker_server.git)
+This roles deploys Docker and configures daemon, together with Traefik inverseproxy
 
-[![](https://img.shields.io/badge/licence-AGPL--3-blue.svg)](http://www.gnu.org/licenses/agpl "License: AGPL-3")
+Requirements
+------------
 
-This role allows you to install on a Debian/Ubuntu server the packages needed to run docker services and docker-compose.
-It also deploys and start a dockerized proxy service based on [Traefik](https://github.com/containous/traefik) and a docker protecting the docker socket from [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)
+This role requires Ansible collection community.docker
 
-The only specific configuration needed (apart from configuration for Ansible to reach your server and elevate privileges) is to define a variable `maintenance_email` (used in templates/inverseproxy.yaml.j2) which is necessary for Let'sEncrypt certificates alerting about expiry.
+Role Variables
+--------------
+
+Variables defined in defaults/main.yaml:
+* default_maintenance_email : default maintenance e-mail used to validate Let's Encrypt certificate (defaults to maintenance@example.org)
+* docker_userns_remap : whether remapping of user namespace is being used for Docker (security feature defaults to true)
+* restrict_internet_access : whether dockers should be granted access to Internet of if networks are internal only (defaults to true meaning docker containers have no direct internet access, whitelisted URLs should be used to grant specific access)
+* default_sshd_port: Port on which SSH daemon listens (defaults to 10022)
+* host_user : user used to connect to the server
+* srv_proxy_pass: Password to access proxy protected pages (AUTH defaults to SuperSecureProxyP4$$)
+
+This role makes use of a few variables which are set in case the target server is part of other groups (but still initialized to false in defaults/main.yml), namely :
+* docker_auth
+  * ldap_url
+  * sso_url
+* docker_nextcloud or docker_owncloud
+  * cloud_url
+  * cloud_collabora and cloud_collabora_url
+  * cloud_onlyoffice and cloud_onlyoffice_url
+* docker_odoo
+  * metabase
+
+Note : all variables defined in defualts_main.yml might be useful in another role, in that case, it would be better to have them overwritten at play or host_vars level in order to make sure the same value is provided to each independant role
+
+Variables from vars directory:
+* OS specific (RedHat.yml / Debian.yml) :
+  * packages_to_remove : list of packages that we want to remove from default delivered servers
+  * packages_to_install : list of packages to install on server
+* Global (main.yml):
+  * pip_packages: Python pip packages to be installed / upgraded
+  * timezone: for Traefik logs (defaults to "Europe/Paris")
+  * traefik_version: "v2.4"
+
+This role also makes use of variables gathered from facts :
+* ansible_os_family : Family of Operating System (Debian or RedHat)
+* ansible_distribution: name of the distribution (Ubuntu, CentOS, etc.)
+* ansible_distribution_release; name of the distribution version (Trusty, Xenial, etc.)
+
+This role also configures backup servers where daily docker facts should be pushed :
+* backup_sftp_user : user to be configured on backup server used to push facts
+* These backup servers should be in group backup_server (if none then corresponding tasks are not pushing anywhere)
+
+Eventually, this role configures 2 variables in host_vars (only if docker_userns_remap is true):
+* dockremap_subuid : first subuid used for user namespace remap for Docker
+* dockremap_subgid : first subgid used for user namespace remap for Docker
+
+Dependencies
+------------
+
+This role requires the following Ansible collection :
+* community.docker
+
+This role does not have dependencies per-se, while it can be dependant on variables defined in other groups (backup_servers, docker_auth, docker_nextcloud, docker_odoo, docker_owncloud)
+
+Example Playbook
+----------------
 
 
+    - hosts: docker
+      gather_facts: true
+      become: true
+      roles:
+      - { role: docker_server, tags: docker }
+      vars:
+      - { default_maintenance_email: "maintenance@example.org" }
+      - { default_sshd_port: 10022 }
+      - { docker_userns_remap: true }
+      - { restrict_internet_access: true }
+      - { host_user: "testuser" }
+      - { srv_proxy_pass: "SuperSecureProxyP4$$" }
+      - { cloud_collabora: true }
+      - { cloud_collabora_url: "collabora.example.org" }
+      - { cloud_url: "cloud.example.org" }
+      - { metabase: false }
+      - { ldap_url: "ldap.example.org" }
+      - { sso_url: "sso.example.org" }
 
-# Credits
+License
+-------
 
-## Contributors
+AGPL-3
 
-* Remi Cazenave <remi-filament>
+Author Information
+------------------
 
-
-## Maintainer
-
-[![](https://le-filament.com/img/logo-lefilament.png)](https://le-filament.com "Le Filament")
-
-This role is maintained by Le Filament
+Le Filament (https://le-filament.com)
