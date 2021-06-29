@@ -6,6 +6,9 @@ services:
         environment:
             TZ: "{{ timezone }}"
         networks:
+{% if odoo_prod.extra_app is defined or odoo_nonprod_instances[0].extra_app is defined %}
+            app:
+{% endif %}
             shared:
 {% if inventory_hostname in groups['docker_auth'] | union(groups['docker_nagios']) or cloud_collabora or cloud_onlyoffice %}
               aliases:
@@ -63,6 +66,12 @@ services:
         restart: unless-stopped
 
 networks:
+{% if odoo_prod.extra_app is defined or odoo_nonprod_instances[0].extra_app is defined %}
+    app:
+        internal: true
+        driver_opts:
+            encrypted: 1
+{% endif %}
     shared:
 {% if restrict_internet_access %}
         internal: true

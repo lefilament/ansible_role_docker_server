@@ -28,7 +28,9 @@ This role makes use of a few variables which are set in case the target server i
   * cloud_collabora and cloud_collabora_url
   * cloud_onlyoffice and cloud_onlyoffice_url
 * docker_odoo
+  * extra_app
   * metabase
+* docker_registry_auth : configuration for connecting to docker registry (goes in /root/.docker/config.json)
 
 Note : all variables defined in defualts_main.yml might be useful in another role, in that case, it would be better to have them overwritten at play or host_vars level in order to make sure the same value is provided to each independant role
 

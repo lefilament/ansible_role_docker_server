@@ -73,6 +73,24 @@
     mode: '0644'
   notify: restart docker daemon
 
+- name: Create .docker repo
+  file:
+    name: /root/.docker
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: docker_registry_auth is defined
+
+- name: add specific repo auth
+  copy:
+    content: "{{ docker_registry_auth }}"
+    dest: /root/.docker/config.json
+    owner: root
+    group: root
+    mode: '0644'
+  when: docker_registry_auth is defined
+
 - name: Create docker repo
   file:
     name: /home/docker/backups
