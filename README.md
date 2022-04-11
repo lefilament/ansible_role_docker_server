@@ -41,7 +41,7 @@ Variables from vars directory:
 * Global (main.yml):
   * pip_packages: Python pip packages to be installed / upgraded
   * timezone: for Traefik logs (defaults to "Europe/Paris")
-  * traefik_version: "v2.4"
+  * traefik_version: "v2.6"
 
 This role also makes use of variables gathered from facts :
 * ansible_os_family : Family of Operating System (Debian or RedHat)
