@@ -60,7 +60,7 @@
 - name: Update pip
   pip:
     name: ['{{ item }}']
-    executable: /usr/bin/pip3
+    executable: pip3
     state: latest
   with_items: "{{ pip_packages }}"
 
