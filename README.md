@@ -7,6 +7,7 @@ Requirements
 ------------
 
 This role requires Ansible collection community.docker
+Also, this role requires passlib (either python package or python3-passlib apt package) for proper encryption of passwords
 
 Role Variables
 --------------
