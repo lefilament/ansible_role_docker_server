@@ -51,7 +51,7 @@
       contentTypeNosniff = true
       referrerPolicy = "same-origin"
       forceSTSHeader = true
-{% if not cloud_onlyoffice %}
+{% if not cloud_onlyoffice and not allow_iframe %}
       frameDeny = true
       customFrameOptionsValue = "SAMEORIGIN"
 {% endif %}

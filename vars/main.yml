@@ -3,4 +3,4 @@ pip_packages:
   - pip
   - docker_compose
 timezone: "Europe/Paris"
-traefik_version: "v2.6"
+traefik_version: "v2.7"

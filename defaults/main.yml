@@ -20,3 +20,6 @@ metabase: false
 ## Auth
 ldap_url: "ldap.example.org"
 sso_url: "sso.example.org"
+
+## iframe
+allow_iframe: false

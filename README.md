@@ -18,6 +18,7 @@ Variables defined in defaults/main.yaml:
 * default_sshd_port: Port on which SSH daemon listens (defaults to 10022)
 * host_user : user used to connect to the server
 * srv_proxy_pass: Password to access proxy protected pages (AUTH defaults to SuperSecureProxyP4$$)
+* allow_iframe: whether iframes are allowed
 
 This role makes use of a few variables which are set in case the target server is part of other groups (but still initialized to false in defaults/main.yml), namely :
 * docker_auth
@@ -41,7 +42,7 @@ Variables from vars directory:
 * Global (main.yml):
   * pip_packages: Python pip packages to be installed / upgraded
   * timezone: for Traefik logs (defaults to "Europe/Paris")
-  * traefik_version: "v2.6"
+  * traefik_version: "v2.7"
 
 This role also makes use of variables gathered from facts :
 * ansible_os_family : Family of Operating System (Debian or RedHat)
