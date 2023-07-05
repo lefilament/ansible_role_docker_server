@@ -1,184 +1,161 @@
 ---
 - name: Include OS-specific variables.
-  include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
 
-## Install Docker packages
 - name: Install apt-transport-https package
-  apt:
-    name: apt-transport-https
-    install_recommends: false
-    state: latest
+  ansible.builtin.apt:
+      name: apt-transport-https
+      install_recommends: false
+      state: latest
   when: ansible_os_family == "Debian"
-
-# TODO-PI update for getting proper packages for Raspbian - add packages libffi-dev libssl-dev
-- name: Add Docker GPG key to APT
-  apt_key:
-    url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
-  when: ansible_os_family == "Debian"
-
-- name: Add Docker repo to APT repositories for x86_64 architecture
-  apt_repository:
-    repo: deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
-    update_cache: true
-  when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
-
-- name: Add Docker repo to APT repositories for ARM 64 architecture
-  apt_repository:
-    repo: deb [arch=arm64] https://download.docker.com/linux/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} stable
-    update_cache: true
-  when: ansible_os_family == "Debian" and ansible_architecture == "aarch64"
-
-- name: Add Docker repo to YUM repositories
-  yum_repository:
-    file: docker-ce
-    name: docker-ce-stable
-    description: Docker CE Stable - $basearch
-    baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
-    gpgkey: https://download.docker.com/linux/centos/gpue
-    gpgcheck: true
-  when: ansible_os_family == "RedHat"
-
-- name: Remove old Docker packages if present
-  package:
-    name: "{{ packages_to_remove }}"
-    state: absent
 
 - name: Install OS packages
-  package:
-    name: "{{ packages_to_install }}"
-    state: latest
+  ansible.builtin.package:
+      name: "{{ packages_to_install }}"
+      state: latest
   async: 120
   poll: 10
   when: not ansible_check_mode
 
 - name: Check installed OS packages
-  package:
-    name: "{{ packages_to_install }}"
-    state: latest
+  ansible.builtin.package:
+      name: "{{ packages_to_install }}"
+      state: latest
   when: ansible_check_mode
 
-- name: Update pip
-  pip:
-    name: ['{{ item }}']
-    executable: pip3
-    state: latest
-  with_items: "{{ pip_packages }}"
+- name: Create /etc/docker repo
+  ansible.builtin.file:
+      name: /etc/docker
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
 
-- name: securize docker daemon
-  template:
-    src: daemon.json.j2
-    dest: /etc/docker/daemon.json
-    owner: root
-    group: root
-    mode: '0644'
+- name: Securize docker daemon
+  ansible.builtin.template:
+      src: daemon.json.j2
+      dest: /etc/docker/daemon.json
+      owner: root
+      group: root
+      mode: '0644'
   notify: restart docker daemon
 
 - name: Create .docker repo
-  file:
-    name: /root/.docker
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+  ansible.builtin.file:
+      name: /root/.docker
+      state: directory
+      owner: root
+      group: root
+      mode: '0750'
   when: docker_registry_auth is defined
 
-- name: add specific repo auth
-  copy:
-    content: "{{ docker_registry_auth }}"
-    dest: /root/.docker/config.json
-    owner: root
-    group: root
-    mode: '0644'
+- name: Add specific repo auth
+  ansible.builtin.copy:
+      content: "{{ docker_registry_auth }}"
+      dest: /root/.docker/config.json
+      owner: root
+      group: root
+      mode: '0644'
   when: docker_registry_auth is defined
 
 - name: Create docker repo
-  file:
-    name: /home/docker/backups
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+  ansible.builtin.file:
+      name: /home/docker/backups
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
 
 ## Install Proxy docker
 - name: Create Inverse Proxy docker structure on server in /home/docker/inverseproxy
-  file:
-    name: /home/docker/inverseproxy
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+  ansible.builtin.file:
+      name: /home/docker/inverseproxy
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
   tags: docker_proxy
 
 - name: Install proxy docker
-  template:
-    src: inverseproxy.yaml.j2
-    dest: /home/docker/inverseproxy/docker-compose.yaml
-    owner: root
-    group: root
-    mode: '0644'
+  ansible.builtin.template:
+      src: inverseproxy.yaml.j2
+      dest: /home/docker/inverseproxy/docker-compose.yaml
+      owner: root
+      group: root
+      mode: '0644'
   tags: docker_proxy
   notify:
-    - start inverseproxy docker
+      - Start inverseproxy docker
 
 - name: Copy Traefik configuration file
-  template:
-    src: traefik.toml.j2
-    dest: "/home/docker/inverseproxy/traefik.toml"
-    owner: root
-    group: root
-    mode: '0644'
+  ansible.builtin.template:
+      src: traefik.toml.j2
+      dest: "/home/docker/inverseproxy/traefik.toml"
+      owner: root
+      group: root
+      mode: '0644'
   tags: docker_proxy
   notify:
-    - start inverseproxy docker
+      - Start inverseproxy docker
 
 - name: Copy Docker Facts Collection script on server
-  template:
-    src: collect_docker_facts.sh.j2
-    dest: /root/collect_docker_facts.sh
-    owner: root
-    group: root
-    mode: '0700'
+  ansible.builtin.template:
+      src: collect_docker_facts.sh.j2
+      dest: /root/collect_docker_facts.sh
+      owner: root
+      group: root
+      mode: '0700'
 
-- name: add cron job to check Docker versions every day
-  cron:
-    name: collect docker facts
-    minute: "1"
-    hour: "2"
-    job: /root/collect_docker_facts.sh
+- name: Add cron job to check Docker versions every day
+  ansible.builtin.cron:
+      name: collect docker facts
+      minute: "1"
+      hour: "2"
+      job: /root/collect_docker_facts.sh
 
 # Flush handlers in order to be able to restart docker daemon with new config and retrieve vars
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable service docker
+  ansible.builtin.service:
+      name: docker
+      enabled: true
+
+- name: Start service docker, if not started
+  ansible.builtin.service:
+      name: docker
+      state: started
 
 - name: Retrieve subuid for dockremap
-  command: grep dockremap /etc/subuid
+  ansible.builtin.command: grep dockremap /etc/subuid
   register: dockremap_subuid_output
   when: docker_userns_remap
 
 - name: Retrieve subgid for dockremap
-  command: grep dockremap /etc/subgid
+  ansible.builtin.command: grep dockremap /etc/subgid
   register: dockremap_subgid_output
   when: docker_userns_remap
 
 - name: Save uid to hostvars for dockremap user
-  lineinfile:
-    name: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}"
-    regexp: "dockremap_subuid:"
-    line: "dockremap_subuid: {{ dockremap_subuid_output.stdout.split(':')[1] }}"
-    create: true
-    mode: '0664'
+  ansible.builtin.lineinfile:
+      name: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}"
+      regexp: "dockremap_subuid:"
+      line: "dockremap_subuid: {{ dockremap_subuid_output.stdout.split(':')[1] }}"
+      create: true
+      mode: '0664'
   connection: local
   become: false
   delegate_to: localhost
   when: docker_userns_remap and dockremap_subuid_output.stdout is defined and not ansible_check_mode
 
 - name: Save gid to hostvars for dockremap user
-  lineinfile:
-    name: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}"
-    regexp: "dockremap_subgid:"
-    line: "dockremap_subgid: {{ dockremap_subgid_output.stdout.split(':')[1] }}"
-    create: true
-    mode: '0664'
+  ansible.builtin.lineinfile:
+      name: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}"
+      regexp: "dockremap_subgid:"
+      line: "dockremap_subgid: {{ dockremap_subgid_output.stdout.split(':')[1] }}"
+      create: true
+      mode: '0664'
   connection: local
   become: false
   delegate_to: localhost

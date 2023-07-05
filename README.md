@@ -34,7 +34,7 @@ This role makes use of a few variables which are set in case the target server i
   * metabase
 * docker_registry_auth : configuration for connecting to docker registry (goes in /root/.docker/config.json)
 
-Note : all variables defined in defualts_main.yml might be useful in another role, in that case, it would be better to have them overwritten at play or host_vars level in order to make sure the same value is provided to each independant role
+Note : all variables defined in defaults/main.yml might be useful in another role, in that case, it would be better to have them overwritten at play or host_vars level in order to make sure the same value is provided to each independant role
 
 Variables from vars directory:
 * OS specific (RedHat.yml / Debian.yml) :
@@ -43,7 +43,7 @@ Variables from vars directory:
 * Global (main.yml):
   * pip_packages: Python pip packages to be installed / upgraded
   * timezone: for Traefik logs (defaults to "Europe/Paris")
-  * traefik_version: "v2.7"
+  * traefik_version: "v2.10"
 
 This role also makes use of variables gathered from facts :
 * ansible_os_family : Family of Operating System (Debian or RedHat)

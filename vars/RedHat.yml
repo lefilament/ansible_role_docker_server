@@ -1,19 +1,19 @@
 ---
 packages_to_remove:
-  - docker
-  - docker-client
-  - docker-client-latest
-  - docker-common
-  - docker-engine
-  - docker-latest
-  - docker-latest-logrotate
-  - docker-logrotate
+    - docker
+    - docker-client
+    - docker-client-latest
+    - docker-common
+    - docker-engine
+    - docker-latest
+    - docker-latest-logrotate
+    - docker-logrotate
 packages_to_install:
-  - device-mapper-persistent-data
-  - docker-ce
-  - gcc
-  - lvm2
-  - python3-devel
-  - python3-docker
-  - python3-pip
-  - python3-setuptools
+    - device-mapper-persistent-data
+    - docker-ce
+    - gcc
+    - lvm2
+    - python3-devel
+    - python3-docker
+    - python3-pip
+    - python3-setuptools

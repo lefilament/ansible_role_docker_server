@@ -10,7 +10,7 @@
   [entryPoints.websecure]
     address = ":443"
     [entryPoints.websecure.http]
-      middlewares = ["security-headers@file"{% if inventory_hostname not in groups.docker_tuleap %}, "limit@file"{% endif %}, "compression@file"]
+      middlewares = ["security-headers@file"{% if inventory_hostname not in groups.docker_tuleap | default([]) %}, "limit@file"{% endif %}, "compression@file"]
       [entryPoints.websecure.http.tls]
         options = "default"
         certResolver = "le"

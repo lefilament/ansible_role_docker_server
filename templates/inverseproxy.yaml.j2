@@ -6,7 +6,8 @@ services:
         environment:
             TZ: "{{ timezone }}"
         networks:
-{% if odoo_prod.extra_app is defined or odoo_nonprod_instances[0].extra_app is defined %}
+            net46:
+{% if odoo_instances is defined and odoo_instances.values() | list | selectattr('extra_app', 'defined') %}
             app:
 {% endif %}
             shared:
@@ -29,7 +30,7 @@ services:
 {% endif %}
 {% endif %}
 {% endif %}
-{% if metabase %}
+{% if odoo_instances is defined and odoo_instances.values() | list | selectattr('metabase', 'defined') %}
             bi:
 {% endif %}
             smtp:
@@ -42,8 +43,10 @@ services:
             - logs:/var/log/traefik/:rw
             - ./traefik.toml:/etc/traefik/traefik.toml:ro
         ports:
-            - "80:80"
-            - "443:443"
+            - "0.0.0.0:80:80"
+            - "0.0.0.0:443:443"
+            - "[::]:80:80"
+            - "[::]:443:443"
         depends_on:
             - dockersocket
         restart: unless-stopped
@@ -66,7 +69,15 @@ services:
         restart: unless-stopped
 
 networks:
-{% if odoo_prod.extra_app is defined or odoo_nonprod_instances[0].extra_app is defined %}
+    net46:
+        name: net46
+        enable_ipv6: true
+        ipam:
+            driver: default
+            config:
+               - subnet: fd01::/64
+                 gateway: fd01::1
+{% if odoo_instances is defined and odoo_instances.values() | list | selectattr('extra_app', 'defined') %}
     app:
         internal: true
         driver_opts:
@@ -78,7 +89,7 @@ networks:
 {% endif %}
         driver_opts:
             encrypted: 1
-{% if metabase %}
+{% if odoo_instances is defined and odoo_instances.values() | list | selectattr('metabase', 'defined') %}
     bi:
         internal: true
         driver_opts:
